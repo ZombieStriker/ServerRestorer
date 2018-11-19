@@ -6,7 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.SocketException;
-import java.util.Calendar;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -41,6 +41,11 @@ public class Main extends JavaPlugin {
 	private String userFTP = "User";
 	private String passwordFTP = "password";
 	private int portFTP = 80;
+
+	private String naming_format = "Backup-%date%";
+	private SimpleDateFormat dateformat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+
+	private String removeFilePath = "";
 
 	private long maxSaveSize = -1;
 
@@ -89,11 +94,15 @@ public class Main extends JavaPlugin {
 		}
 		automate = (boolean) a("enableautoSaving", true);
 
+		naming_format = (String) a("FileNameFormat", naming_format);
+
 		useFTP = (boolean) a("EnableFTP", false);
 		serverFTP = (String) a("FTPAdress", serverFTP);
 		portFTP = (int) a("FTPPort", portFTP);
 		userFTP = (String) a("FTPUsername", userFTP);
 		passwordFTP = (String) a("FTPPassword", passwordFTP);
+
+		removeFilePath = (String) a("FTP_Directory", removeFilePath);
 
 		maxSaveSize = toByteSize((String) a("MaxSaveSize", "10G"));
 
@@ -223,24 +232,27 @@ public class Main extends JavaPlugin {
 					} catch (Error | Exception e) {
 					}
 					final long time = lastSave = System.currentTimeMillis();
-					Date d = Calendar.getInstance().getTime();
-					@SuppressWarnings("deprecation")
-					File ff = new File(getBackupFolder(), "Backup" + d.getYear() + "-" + d.getMonth() + "-" + d.getDay()
-							+ "-" + d.getHours() + "-" + d.getMinutes() + ".zip");
+					Date d = new Date(System.currentTimeMillis());
+					File ff = new File(getBackupFolder(),
+							naming_format.replaceAll("%date%", dateformat.format(d)) + ".zip");
 					if (!ff.exists())
 						ff.createNewFile();
 					zipFolder(getMasterFolder().getPath(), ff.getPath());
 					long timeDif = (System.currentTimeMillis() - time) / 1000;
 					String timeDifS = (((int) (timeDif / 60)) + "M, " + (timeDif % 60) + "S");
 					sender.sendMessage(prefix + " Done! Packing took:" + timeDifS);
-					sender.sendMessage(prefix+" Compressed server with size of "+(humanReadableByteCount(folderSize(getMasterFolder())-folderSize(new File(getMasterFolder(),"backups")), false))+" to "+humanReadableByteCount(ff.length(), false));
+					sender.sendMessage(
+							prefix + " Compressed server with size of "
+									+ (humanReadableByteCount(folderSize(getMasterFolder())
+											- folderSize(new File(getMasterFolder(), "backups")), false))
+									+ " to " + humanReadableByteCount(ff.length(), false));
 					if (useFTP) {
 						sender.sendMessage(prefix + " Starting FTP Transfer");
 						FileInputStream zipFileStream = new FileInputStream(ff);
 						FTPClient ftpClient = new FTPClient();
 						try {
 							try {
-								sendFTP(sender, ff, ftpClient, zipFileStream);
+								sendFTP(sender, ff, ftpClient, zipFileStream, removeFilePath);
 								if (deleteZipOnFTP)
 									ff.delete();
 							} catch (Exception e2) {
@@ -250,7 +262,7 @@ public class Main extends JavaPlugin {
 								}
 								// In case the server uses SSH
 								ftpClient = new FTPSClient();
-								sendFTP(sender, ff, ftpClient, zipFileStream);
+								sendFTP(sender, ff, ftpClient, zipFileStream, removeFilePath);
 								if (deleteZipOnFTP)
 									ff.delete();
 							}
@@ -278,7 +290,7 @@ public class Main extends JavaPlugin {
 		}.runTaskAsynchronously(this);
 	}
 
-	public void sendFTP(CommandSender sender, File ff, FTPClient ftpClient, FileInputStream zipFileStream)
+	public void sendFTP(CommandSender sender, File ff, FTPClient ftpClient, FileInputStream zipFileStream, String path)
 			throws SocketException, IOException {
 		ftpClient.connect(serverFTP, portFTP);
 		ftpClient.login(userFTP, passwordFTP);
@@ -286,7 +298,7 @@ public class Main extends JavaPlugin {
 
 		ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
 
-		boolean done = ftpClient.storeFile(ff.getName(), zipFileStream);
+		boolean done = ftpClient.storeFile(path + ff.getName(), zipFileStream);
 		zipFileStream.close();
 		if (done) {
 			sender.sendMessage(prefix + " Transfered backup using FTP!");
@@ -403,12 +415,14 @@ public class Main extends JavaPlugin {
 		}
 		return k;
 	}
+
 	public static String humanReadableByteCount(long bytes, boolean si) {
-	    int unit = si ? 1000 : 1024;
-	    if (bytes < unit) return bytes + " B";
-	    int exp = (int) (Math.log(bytes) / Math.log(unit));
-	    String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp-1) + (si ? "" : "i");
-	    return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+		int unit = si ? 1000 : 1024;
+		if (bytes < unit)
+			return bytes + " B";
+		int exp = (int) (Math.log(bytes) / Math.log(unit));
+		String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
+		return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
 	}
 
 	public static long folderSize(File directory) {
@@ -421,6 +435,7 @@ public class Main extends JavaPlugin {
 		}
 		return length;
 	}
+
 	public static File lastFileModified(File dir) {
 		File fl = dir;
 		File[] files = fl.listFiles(new FileFilter() {
