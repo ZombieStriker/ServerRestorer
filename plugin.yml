@@ -1,5 +1,5 @@
 main: me.zombie_striker.sr.Main
-version: 1.0.12
+version: 1.0.15
 name: ServerRestorer
 api-version: 1.13
 commands:

@@ -1,3 +1,16 @@
+1.0.15
+	Fixed issue where older backups will only be deleted if there are more than 1 file in the folder.
+	Added more messages for the FTP server.
+
+1.0.14
+	Added SFTP Support
+
+1.0.13
+	Added ability to add custom exceptions
+
+1.0.12b
+	Fixed error is backup folders is not within server folder
+
 1.0.12
 	Added ability to change name format for files.
 	With the ability to specify naming, you can now make sure you only have one backup by simply removing the date placeholder

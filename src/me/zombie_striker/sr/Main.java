@@ -7,7 +7,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.SocketException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -37,6 +39,7 @@ public class Main extends JavaPlugin {
 	private boolean automate = true;
 
 	private boolean useFTP = false;
+	private boolean useSFTP = false;
 	private String serverFTP = "www.example.com";
 	private String userFTP = "User";
 	private String passwordFTP = "password";
@@ -54,6 +57,8 @@ public class Main extends JavaPlugin {
 	BukkitTask br = null;
 
 	private boolean deleteZipOnFTP = false;
+
+	private static List<String> exceptions = new ArrayList<String>();
 
 	private static String prefix = ChatColor.GOLD + "[" + ChatColor.AQUA + "ServerRestorer" + ChatColor.GOLD + "]"
 			+ ChatColor.GRAY;
@@ -74,6 +79,7 @@ public class Main extends JavaPlugin {
 		return def;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void onEnable() {
 		master = getDataFolder().getAbsoluteFile().getParentFile().getParentFile();
@@ -97,12 +103,20 @@ public class Main extends JavaPlugin {
 		naming_format = (String) a("FileNameFormat", naming_format);
 
 		useFTP = (boolean) a("EnableFTP", false);
+		useFTP = (boolean) a("EnableSFTP", false);
 		serverFTP = (String) a("FTPAdress", serverFTP);
 		portFTP = (int) a("FTPPort", portFTP);
 		userFTP = (String) a("FTPUsername", userFTP);
 		passwordFTP = (String) a("FTPPassword", passwordFTP);
 
 		removeFilePath = (String) a("FTP_Directory", removeFilePath);
+
+		if (!getConfig().contains("exceptions")) {
+			exceptions.add("logs");
+			exceptions.add("crash-reports");
+			exceptions.add("backups");
+		}
+		exceptions = (List<String>) a("exceptions", exceptions);
 
 		maxSaveSize = toByteSize((String) a("MaxSaveSize", "10G"));
 
@@ -219,7 +233,7 @@ public class Main extends JavaPlugin {
 			public void run() {
 				try {
 					try {
-						for (int j = 0; j < 10; j++) {
+						for (int j = 0; j < Math.min(10, backups.listFiles().length - 1); j++) {
 							if (folderSize(backups) > maxSaveSize) {
 								File oldestBack = lastFileModified(backups);
 								sender.sendMessage(prefix + ChatColor.RED + oldestBack.getName()
@@ -241,31 +255,25 @@ public class Main extends JavaPlugin {
 					long timeDif = (System.currentTimeMillis() - time) / 1000;
 					String timeDifS = (((int) (timeDif / 60)) + "M, " + (timeDif % 60) + "S");
 					sender.sendMessage(prefix + " Done! Packing took:" + timeDifS);
-					sender.sendMessage(
-							prefix + " Compressed server with size of "
-									+ (humanReadableByteCount(folderSize(getMasterFolder())
-											- folderSize(new File(getMasterFolder(), "backups")), false))
-									+ " to " + humanReadableByteCount(ff.length(), false));
-					if (useFTP) {
-						sender.sendMessage(prefix + " Starting FTP Transfer");
+					File tempBackupCheck = new File(getMasterFolder(), "backups");
+					sender.sendMessage(prefix + " Compressed server with size of "
+							+ (humanReadableByteCount(folderSize(getMasterFolder())
+									- (tempBackupCheck.exists() ? folderSize(tempBackupCheck) : 0), false))
+							+ " to " + humanReadableByteCount(ff.length(), false));
+					if (useSFTP) {
+						sender.sendMessage(prefix + " Starting SFTP Transfer");
 						FileInputStream zipFileStream = new FileInputStream(ff);
-						FTPClient ftpClient = new FTPClient();
+						FTPSClient ftpClient = new FTPSClient();
 						try {
-							try {
-								sendFTP(sender, ff, ftpClient, zipFileStream, removeFilePath);
-								if (deleteZipOnFTP)
-									ff.delete();
-							} catch (Exception e2) {
-								if (ftpClient.isConnected()) {
-									ftpClient.logout();
-									ftpClient.disconnect();
-								}
-								// In case the server uses SSH
+							if (ftpClient.isConnected()) {
+								sender.sendMessage(prefix + "FTPSClient was already connected. Disconnecting");
+								ftpClient.logout();
+								ftpClient.disconnect();
 								ftpClient = new FTPSClient();
-								sendFTP(sender, ff, ftpClient, zipFileStream, removeFilePath);
-								if (deleteZipOnFTP)
-									ff.delete();
 							}
+							sendFTP(sender, ff, ftpClient, zipFileStream, removeFilePath);
+							if (deleteZipOnFTP)
+								ff.delete();
 						} catch (Exception | Error e) {
 							sender.sendMessage(
 									prefix + " FAILED TO FTP TRANSFER FILE: " + ff.getName() + ". ERROR IN CONSOLE.");
@@ -275,6 +283,38 @@ public class Main extends JavaPlugin {
 						} finally {
 							try {
 								if (ftpClient.isConnected()) {
+									sender.sendMessage(prefix + "Disconnecting");
+									ftpClient.logout();
+									ftpClient.disconnect();
+								}
+							} catch (IOException ex) {
+								ex.printStackTrace();
+							}
+						}
+					} else if (useFTP) {
+						sender.sendMessage(prefix + " Starting FTP Transfer");
+						FileInputStream zipFileStream = new FileInputStream(ff);
+						FTPClient ftpClient = new FTPClient();
+						try {
+								if (ftpClient.isConnected()) {
+									sender.sendMessage(prefix + "FTPClient was already connected. Disconnecting");
+									ftpClient.logout();
+									ftpClient.disconnect();
+									ftpClient = new FTPClient();
+								}
+								sendFTP(sender, ff, ftpClient, zipFileStream, removeFilePath);
+								if (deleteZipOnFTP)
+									ff.delete();
+						} catch (Exception | Error e) {
+							sender.sendMessage(
+									prefix + " FAILED TO FTP TRANSFER FILE: " + ff.getName() + ". ERROR IN CONSOLE.");
+							if (deleteZipOnFail)
+								ff.delete();
+							e.printStackTrace();
+						} finally {
+							try {
+								if (ftpClient.isConnected()) {
+									sender.sendMessage(prefix + "Disconnecting");
 									ftpClient.logout();
 									ftpClient.disconnect();
 								}
@@ -393,12 +433,9 @@ public class Main extends JavaPlugin {
 
 	private static boolean isExempt(String path) {
 		path = path.toLowerCase();
-		if (path.endsWith("logs"))
-			return true;
-		if (path.endsWith("crash-reports"))
-			return true;
-		if (path.endsWith("backups"))
-			return true;
+		for (String s : exceptions)
+			if (path.endsWith(s))
+				return true;
 		return false;
 	}
 
