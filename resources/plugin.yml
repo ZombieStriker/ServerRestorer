@@ -1,0 +1,15 @@
+main: me.zombie_striker.sr.Main
+version: ${project.version}
+name: ServerRestorer
+api-version: 1.13
+commands:
+  ServerRestorer:
+    description: Saves the server
+    aliases: [sr]
+permissions:
+   serverrestorer.*:
+     description: Gives access to all PixelPrinter commands
+     children:
+       serverrestorer.save: true
+author:
+   Zombie_Striker

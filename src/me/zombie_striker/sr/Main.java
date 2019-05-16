@@ -25,6 +25,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.Session;
+
 public class Main extends JavaPlugin {
 
 	private boolean saveTheConfig = false;
@@ -35,10 +40,11 @@ public class Main extends JavaPlugin {
 	private File master = null;
 	private File backups = null;
 	private boolean saveServerJar = false;
-
+	
 	private boolean automate = true;
 
 	private boolean useFTP = false;
+	private boolean useFTPS = false;
 	private boolean useSFTP = false;
 	private String serverFTP = "www.example.com";
 	private String userFTP = "User";
@@ -103,7 +109,8 @@ public class Main extends JavaPlugin {
 		naming_format = (String) a("FileNameFormat", naming_format);
 
 		useFTP = (boolean) a("EnableFTP", false);
-		useFTP = (boolean) a("EnableSFTP", false);
+		useFTPS = (boolean) a("EnableFTPS", false);
+		useSFTP = (boolean) a("EnableSFTP", false);
 		serverFTP = (String) a("FTPAdress", serverFTP);
 		portFTP = (int) a("FTPPort", portFTP);
 		userFTP = (String) a("FTPUsername", userFTP);
@@ -235,7 +242,7 @@ public class Main extends JavaPlugin {
 					try {
 						for (int j = 0; j < Math.min(10, backups.listFiles().length - 1); j++) {
 							if (folderSize(backups) > maxSaveSize) {
-								File oldestBack = lastFileModified(backups);
+								File oldestBack = firstFileModified(backups);
 								sender.sendMessage(prefix + ChatColor.RED + oldestBack.getName()
 										+ ": This save goes over the max savesize, and has just deleted the oldest file. If you wish to save older backups, copy them to another location.");
 								oldestBack.delete();
@@ -261,7 +268,25 @@ public class Main extends JavaPlugin {
 									- (tempBackupCheck.exists() ? folderSize(tempBackupCheck) : 0), false))
 							+ " to " + humanReadableByteCount(ff.length(), false));
 					if (useSFTP) {
-						sender.sendMessage(prefix + " Starting SFTP Transfer");
+						try {
+							sender.sendMessage(prefix + " Starting SFTP Transfer");
+							JSch jsch = new JSch();
+							Session session = jsch.getSession(userFTP, serverFTP, portFTP);
+							session.setConfig("PreferredAuthentications", "password");
+							session.setPassword(passwordFTP);
+							session.connect(1000*20);
+							Channel channel = session.openChannel("sftp");
+							ChannelSftp sftp = (ChannelSftp) channel;
+							sftp.connect(1000*20);
+						} catch (Exception | Error e) {
+							sender.sendMessage(
+									prefix + " FAILED TO SFTP TRANSFER FILE: " + ff.getName() + ". ERROR IN CONSOLE.");
+							if (deleteZipOnFail)
+								ff.delete();
+							e.printStackTrace();
+						}
+					} else if (useFTPS) {
+						sender.sendMessage(prefix + " Starting FTPS Transfer");
 						FileInputStream zipFileStream = new FileInputStream(ff);
 						FTPSClient ftpClient = new FTPSClient();
 						try {
@@ -276,7 +301,7 @@ public class Main extends JavaPlugin {
 								ff.delete();
 						} catch (Exception | Error e) {
 							sender.sendMessage(
-									prefix + " FAILED TO FTP TRANSFER FILE: " + ff.getName() + ". ERROR IN CONSOLE.");
+									prefix + " FAILED TO FTPS TRANSFER FILE: " + ff.getName() + ". ERROR IN CONSOLE.");
 							if (deleteZipOnFail)
 								ff.delete();
 							e.printStackTrace();
@@ -296,15 +321,15 @@ public class Main extends JavaPlugin {
 						FileInputStream zipFileStream = new FileInputStream(ff);
 						FTPClient ftpClient = new FTPClient();
 						try {
-								if (ftpClient.isConnected()) {
-									sender.sendMessage(prefix + "FTPClient was already connected. Disconnecting");
-									ftpClient.logout();
-									ftpClient.disconnect();
-									ftpClient = new FTPClient();
-								}
-								sendFTP(sender, ff, ftpClient, zipFileStream, removeFilePath);
-								if (deleteZipOnFTP)
-									ff.delete();
+							if (ftpClient.isConnected()) {
+								sender.sendMessage(prefix + "FTPClient was already connected. Disconnecting");
+								ftpClient.logout();
+								ftpClient.disconnect();
+								ftpClient = new FTPClient();
+							}
+							sendFTP(sender, ff, ftpClient, zipFileStream, removeFilePath);
+							if (deleteZipOnFTP)
+								ff.delete();
 						} catch (Exception | Error e) {
 							sender.sendMessage(
 									prefix + " FAILED TO FTP TRANSFER FILE: " + ff.getName() + ". ERROR IN CONSOLE.");
@@ -473,17 +498,17 @@ public class Main extends JavaPlugin {
 		return length;
 	}
 
-	public static File lastFileModified(File dir) {
+	public static File firstFileModified(File dir) {
 		File fl = dir;
 		File[] files = fl.listFiles(new FileFilter() {
 			public boolean accept(File file) {
 				return file.isFile();
 			}
 		});
-		long lastMod = Long.MIN_VALUE;
+		long lastMod = Long.MAX_VALUE;
 		File choice = null;
 		for (File file : files) {
-			if (file.lastModified() > lastMod) {
+			if (file.lastModified() < lastMod) {
 				choice = file;
 				lastMod = file.lastModified();
 			}
