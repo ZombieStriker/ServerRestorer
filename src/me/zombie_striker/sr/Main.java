@@ -1,34 +1,33 @@
 package me.zombie_striker.sr;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.Session;
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPSClient;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Chunk;
+import org.bukkit.World;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
+
+import java.io.*;
 import java.net.SocketException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
-
-import org.apache.commons.net.ftp.FTP;
-import org.apache.commons.net.ftp.FTPClient;
-import org.apache.commons.net.ftp.FTPSClient;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.World;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
-
-import com.jcraft.jsch.Channel;
-import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.Session;
 
 public class Main extends JavaPlugin {
 
@@ -40,7 +39,9 @@ public class Main extends JavaPlugin {
 	private File master = null;
 	private File backups = null;
 	private boolean saveServerJar = false;
-	
+
+	private boolean currentlySaving = false;
+
 	private boolean automate = true;
 
 	private boolean useFTP = false;
@@ -66,8 +67,8 @@ public class Main extends JavaPlugin {
 
 	private static List<String> exceptions = new ArrayList<String>();
 
-	private static String prefix = ChatColor.GOLD + "[" + ChatColor.AQUA + "ServerRestorer" + ChatColor.GOLD + "]"
-			+ ChatColor.GRAY;
+	private static String prefix=null;
+	private static String kickmessage=null;
 
 	public File getMasterFolder() {
 		return master;
@@ -107,6 +108,11 @@ public class Main extends JavaPlugin {
 		automate = (boolean) a("enableautoSaving", true);
 
 		naming_format = (String) a("FileNameFormat", naming_format);
+
+		String unPrefix = (String) a("prefix","&6[&3ServerRestorer&6]&8");
+		prefix = ChatColor.translateAlternateColorCodes('&', prefix);
+		String kicky = (String) a("kickMessage",unPrefix+" Restoring server to previous save. Please rejoin in a few seconds.");
+		kickmessage = ChatColor.translateAlternateColorCodes('&',kicky);
 
 		useFTP = (boolean) a("EnableFTP", false);
 		useFTPS = (boolean) a("EnableFTPS", false);
@@ -157,18 +163,72 @@ public class Main extends JavaPlugin {
 	}
 
 	@Override
+	public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+
+		if (args.length == 1) {
+				List<String> list = new ArrayList<>();
+				String[] commands = new String[]{"disableAutoSaver" ,"enableAutoSaver", "restore","save","toggleOptions"};
+				for (String f : commands) {
+					if (f.toLowerCase().startsWith(args[0].toLowerCase()))
+						list.add(f);
+				}
+				return list;
+
+		}
+
+		if (args.length > 1) {
+			if (args[0].equalsIgnoreCase("restore")) {
+				List<String> list = new ArrayList<>();
+				for (File f : getBackupFolder().listFiles()) {
+					if (f.getName().toLowerCase().startsWith(args[1].toLowerCase()))
+						list.add(f.getName());
+				}
+				return list;
+			}
+		}
+		return super.onTabComplete(sender, command, alias, args);
+	}
+
+	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		if (args.length == 0) {
 			sender.sendMessage(ChatColor.GOLD + "---===+Server Restorer+===---");
 			sender.sendMessage("/sr save : Saves the server");
+			sender.sendMessage("/sr restore <backup> : Restores server to previous backup (automatically restarts)");
 			sender.sendMessage("/sr enableAutoSaver [1H,6H,1D,7D] : Configure how long it takes to autosave");
 			sender.sendMessage("/sr disableAutoSaver : Disables the autosaver");
 			sender.sendMessage("/sr toggleOptions : TBD");
 			return true;
 		}
+		if (args[0].equalsIgnoreCase("restore")) {
+			if (!sender.hasPermission("serverrestorer.restore")) {
+				sender.sendMessage(prefix + ChatColor.RED + " You do not have permission to use this command.");
+				return true;
+			}
+			if(currentlySaving){
+				sender.sendMessage(prefix+" The server is currently being saved. Please wait.");
+				return true;
+			}
+			if (args.length < 2) {
+				sender.sendMessage(prefix + " A valid backup file is required.");
+				return true;
+			}
+			File backup = new File(getBackupFolder(), args[1]);
+			if (!backup.exists()) {
+				sender.sendMessage(prefix + " The file \"" + args[1] + "\" does not exist.");
+				return true;
+			}
+			restore(backup);
+			sender.sendMessage(prefix + " Restoration complete.");
+			return true;
+		}
 		if (args[0].equalsIgnoreCase("save")) {
 			if (!sender.hasPermission("serverrestorer.save")) {
 				sender.sendMessage(prefix + ChatColor.RED + " You do not have permission to use this command.");
+				return true;
+			}
+			if(currentlySaving){
+				sender.sendMessage(prefix+" The server is currently being saved. Please wait.");
 				return true;
 			}
 			save(sender);
@@ -228,6 +288,7 @@ public class Main extends JavaPlugin {
 	}
 
 	public void save(CommandSender sender) {
+		currentlySaving = true;
 		sender.sendMessage(prefix + " Starting to save directory. Please wait.");
 		for (World loaded : Bukkit.getWorlds()) {
 			try {
@@ -265,8 +326,9 @@ public class Main extends JavaPlugin {
 					File tempBackupCheck = new File(getMasterFolder(), "backups");
 					sender.sendMessage(prefix + " Compressed server with size of "
 							+ (humanReadableByteCount(folderSize(getMasterFolder())
-									- (tempBackupCheck.exists() ? folderSize(tempBackupCheck) : 0), false))
+							- (tempBackupCheck.exists() ? folderSize(tempBackupCheck) : 0), false))
 							+ " to " + humanReadableByteCount(ff.length(), false));
+					currentlySaving = false;
 					if (useSFTP) {
 						try {
 							sender.sendMessage(prefix + " Starting SFTP Transfer");
@@ -274,10 +336,10 @@ public class Main extends JavaPlugin {
 							Session session = jsch.getSession(userFTP, serverFTP, portFTP);
 							session.setConfig("PreferredAuthentications", "password");
 							session.setPassword(passwordFTP);
-							session.connect(1000*20);
+							session.connect(1000 * 20);
 							Channel channel = session.openChannel("sftp");
 							ChannelSftp sftp = (ChannelSftp) channel;
-							sftp.connect(1000*20);
+							sftp.connect(1000 * 20);
 						} catch (Exception | Error e) {
 							sender.sendMessage(
 									prefix + " FAILED TO SFTP TRANSFER FILE: " + ff.getName() + ". ERROR IN CONSOLE.");
@@ -385,6 +447,69 @@ public class Main extends JavaPlugin {
 		double j = Double.parseDouble(time.substring(0, time.length() - 1));
 		return (int) (j * k);
 	}
+
+
+	public void restore(File backup) {
+		//Kick all players
+		for (Player player : Bukkit.getOnlinePlayers())
+			player.kickPlayer(kickmessage);
+
+		//Disable all plugins safely.
+		for (Plugin p : Bukkit.getPluginManager().getPlugins()) {
+			if (p != this) {
+				try {
+					Bukkit.getPluginManager().disablePlugin(p);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		//Unload all worlds.
+		for (World w : Bukkit.getWorlds()) {
+			for (Chunk c : w.getLoadedChunks()) {
+				c.unload(false);
+			}
+			Bukkit.unloadWorld(w, false);
+		}
+
+
+		//Start overriding files.
+		File parentTo = getMasterFolder().getParentFile();
+		try {
+			byte[] buffer = new byte[1024];
+			ZipInputStream zis = new ZipInputStream(new FileInputStream(backup));
+			ZipEntry zipEntry = zis.getNextEntry();
+			while (zipEntry != null) {
+				File newFile = newFile(parentTo, zipEntry);
+				FileOutputStream fos = new FileOutputStream(newFile);
+				int len;
+				while ((len = zis.read(buffer)) > 0) {
+					fos.write(buffer, 0, len);
+				}
+				fos.close();
+				zipEntry = zis.getNextEntry();
+			}
+			zis.closeEntry();
+			zis.close();
+		} catch (Exception e4) {
+			e4.printStackTrace();
+		}
+		Bukkit.reload();
+	}
+
+	public static File newFile(File destinationDir, ZipEntry zipEntry) throws IOException {
+		File destFile = new File(destinationDir, zipEntry.getName());
+
+		String destDirPath = destinationDir.getCanonicalPath();
+		String destFilePath = destFile.getCanonicalPath();
+
+		if (!destFilePath.startsWith(destDirPath + File.separator)) {
+			throw new IOException("Entry is outside of the target dir: " + zipEntry.getName());
+		}
+
+		return destFile;
+	}
+
 
 	public void zipFolder(String srcFolder, String destZipFile) throws Exception {
 		ZipOutputStream zip = null;

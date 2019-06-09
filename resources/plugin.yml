@@ -7,9 +7,10 @@ commands:
     description: Saves the server
     aliases: [sr]
 permissions:
-   serverrestorer.*:
-     description: Gives access to all PixelPrinter commands
-     children:
-       serverrestorer.save: true
+  serverrestorer.*:
+    description: Gives access to all PixelPrinter commands
+    children:
+      serverrestorer.save: true
+      serverrestorer.restore: true
 author:
-   Zombie_Striker
+  Zombie_Striker

@@ -2,7 +2,14 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>me.zombie_striker</groupId>
   <artifactId>ServerRestorer</artifactId>
-  <version>1.0.19</version>
+  <version>1.0.20</version>
+    <repositories>
+
+        <repository>
+            <id>spigot-repo</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+        </repository>
+    </repositories>
     <build>
 		<finalName>${project.name}</finalName>
         <defaultGoal>install</defaultGoal>
@@ -38,13 +45,14 @@
     <sourceDirectory>src</sourceDirectory>
      </build>
      <dependencies>
-     <!--Spigot API -->
-     <dependency>
-     <groupId>org.spigotmc</groupId>
-			<artifactId>spigot</artifactId>
-			<version>1.14.1-R0.1-SNAPSHOT</version>
-			<scope>provided</scope>
-		</dependency>
+         <!--Spigot API-->
+         <!--You only need one of the two, don't put both. Spigot is recommended.-->
+         <dependency>
+             <groupId>org.spigotmc</groupId>
+             <artifactId>spigot</artifactId>
+             <version>1.14.2-R0.1-SNAPSHOT</version>
+             <scope>provided</scope>
+         </dependency>
 <!-- https://mvnrepository.com/artifact/commons-net/commons-net -->
 <dependency>
 <groupId>commons-net</groupId>
