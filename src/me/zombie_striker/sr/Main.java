@@ -67,8 +67,8 @@ public class Main extends JavaPlugin {
 
 	private static List<String> exceptions = new ArrayList<String>();
 
-	private static String prefix=null;
-	private static String kickmessage=null;
+	private static String prefix="&6[&3ServerRestorer&6]&8";
+	private static String kickmessage=" Restoring server to previous save. Please rejoin in a few seconds.";
 
 	public File getMasterFolder() {
 		return master;
@@ -110,7 +110,7 @@ public class Main extends JavaPlugin {
 		naming_format = (String) a("FileNameFormat", naming_format);
 
 		String unPrefix = (String) a("prefix","&6[&3ServerRestorer&6]&8");
-		prefix = ChatColor.translateAlternateColorCodes('&', prefix);
+		prefix = ChatColor.translateAlternateColorCodes('&', unPrefix);
 		String kicky = (String) a("kickMessage",unPrefix+" Restoring server to previous save. Please rejoin in a few seconds.");
 		kickmessage = ChatColor.translateAlternateColorCodes('&',kicky);
 
