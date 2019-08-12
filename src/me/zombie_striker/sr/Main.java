@@ -109,10 +109,10 @@ public class Main extends JavaPlugin {
 
 		naming_format = (String) a("FileNameFormat", naming_format);
 
-		String unPrefix = (String) a("prefix","&6[&3ServerRestorer&6]&8");
+		String unPrefix = (String) a("prefix", "&6[&3ServerRestorer&6]&8");
 		prefix = ChatColor.translateAlternateColorCodes('&', unPrefix);
-		String kicky = (String) a("kickMessage",unPrefix+" Restoring server to previous save. Please rejoin in a few seconds.");
-		kickmessage = ChatColor.translateAlternateColorCodes('&',kicky);
+		String kicky = (String) a("kickMessage", unPrefix + " Restoring server to previous save. Please rejoin in a few seconds.");
+		kickmessage = ChatColor.translateAlternateColorCodes('&', kicky);
 
 		useFTP = (boolean) a("EnableFTP", false);
 		useFTPS = (boolean) a("EnableFTPS", false);
@@ -137,18 +137,25 @@ public class Main extends JavaPlugin {
 		deleteZipOnFail = (boolean) a("DeleteZipIfFailed", false);
 		if (saveTheConfig)
 			saveConfig();
-		if (automate)
+		if (automate) {
+			final JavaPlugin thi = this;
 			br = new BukkitRunnable() {
 				@Override
 				public void run() {
-					if (System.currentTimeMillis() - lastSave > timedist) {
-						save(Bukkit.getConsoleSender());
-						getConfig().set("LastAutosave", lastSave = System.currentTimeMillis());
-						saveConfig();
-						return;
-					}
+					if (System.currentTimeMillis() - lastSave >= timedist) {
+						new BukkitRunnable() {
+							@Override
+							public void run() {
+								save(Bukkit.getConsoleSender());
+							}
+					}.runTaskLater(thi,0);
+					getConfig().set("LastAutosave", lastSave = System.currentTimeMillis());
+					saveConfig();
+					return;
 				}
-			}.runTaskTimerAsynchronously(this, 20, 20 * 60 * 30);
+			}
+		}.runTaskTimerAsynchronously(this, 20, 20 * 60 * 10);
+	}
 
 		new Metrics(this);
 
@@ -480,14 +487,18 @@ public class Main extends JavaPlugin {
 			ZipInputStream zis = new ZipInputStream(new FileInputStream(backup));
 			ZipEntry zipEntry = zis.getNextEntry();
 			while (zipEntry != null) {
-				File newFile = newFile(parentTo, zipEntry);
-				FileOutputStream fos = new FileOutputStream(newFile);
-				int len;
-				while ((len = zis.read(buffer)) > 0) {
-					fos.write(buffer, 0, len);
+				try {
+					File newFile = newFile(parentTo, zipEntry);
+					FileOutputStream fos = new FileOutputStream(newFile);
+					int len;
+					while ((len = zis.read(buffer)) > 0) {
+						fos.write(buffer, 0, len);
+					}
+					fos.close();
+					zipEntry = zis.getNextEntry();
+				}catch (Exception e){
+					e.printStackTrace();
 				}
-				fos.close();
-				zipEntry = zis.getNextEntry();
 			}
 			zis.closeEntry();
 			zis.close();

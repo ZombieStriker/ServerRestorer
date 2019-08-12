@@ -1,3 +1,7 @@
+1.0.21
+    Fixed issue for individual files not being able to be restored.
+    Made backup timer more customizable
+
 1.0.20
     Added /sr restore to restore the server.
     Made prefix configurable
