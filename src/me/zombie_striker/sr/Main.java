@@ -300,6 +300,7 @@ public class Main extends JavaPlugin {
 		for (World loaded : Bukkit.getWorlds()) {
 			try {
 				loaded.save();
+				loaded.setAutoSave(false);
 			} catch (Exception e) {
 			}
 		}
@@ -336,6 +337,12 @@ public class Main extends JavaPlugin {
 							- (tempBackupCheck.exists() ? folderSize(tempBackupCheck) : 0), false))
 							+ " to " + humanReadableByteCount(ff.length(), false));
 					currentlySaving = false;
+					for (World loaded : Bukkit.getWorlds()) {
+						try {
+							loaded.setAutoSave(true);
+						} catch (Exception e) {
+						}
+					}
 					if (useSFTP) {
 						try {
 							sender.sendMessage(prefix + " Starting SFTP Transfer");
