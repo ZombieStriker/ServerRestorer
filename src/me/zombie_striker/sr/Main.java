@@ -196,6 +196,7 @@ public class Main extends JavaPlugin {
 		return super.onTabComplete(sender, command, alias, args);
 	}
 
+
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		if (args.length == 0) {
@@ -297,9 +298,15 @@ public class Main extends JavaPlugin {
 	public void save(CommandSender sender) {
 		currentlySaving = true;
 		sender.sendMessage(prefix + " Starting to save directory. Please wait.");
+		List<World> autosave = new ArrayList<>();
 		for (World loaded : Bukkit.getWorlds()) {
 			try {
 				loaded.save();
+				if(loaded.isAutoSave()){
+					autosave.add(loaded);
+					loaded.setAutoSave(false);
+				}
+
 			} catch (Exception e) {
 			}
 		}
@@ -336,6 +343,8 @@ public class Main extends JavaPlugin {
 							- (tempBackupCheck.exists() ? folderSize(tempBackupCheck) : 0), false))
 							+ " to " + humanReadableByteCount(ff.length(), false));
 					currentlySaving = false;
+					for(World world : autosave)
+						world.setAutoSave(true);
 					if (useSFTP) {
 						try {
 							sender.sendMessage(prefix + " Starting SFTP Transfer");

@@ -1,3 +1,6 @@
+1.0.2
+    Fixed Autosaving for worlds.
+
 1.0.21
     Fixed issue for individual files not being able to be restored.
     Made backup timer more customizable
