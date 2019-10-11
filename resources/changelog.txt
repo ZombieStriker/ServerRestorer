@@ -1,4 +1,9 @@
-1.0.2
+1.0.23
+    Fixed removing spigot/craftbukkit jar
+    Added option to not save plugin jars.
+    Added dynamap automatically to exceptions list
+
+1.0.22
     Fixed Autosaving for worlds.
 
 1.0.21

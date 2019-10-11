@@ -31,19 +31,19 @@ import java.util.zip.ZipOutputStream;
 
 public class Main extends JavaPlugin {
 
+	private static List<String> exceptions = new ArrayList<String>();
+	private static String prefix = "&6[&3ServerRestorer&6]&8";
+	private static String kickmessage = " Restoring server to previous save. Please rejoin in a few seconds.";
+	BukkitTask br = null;
 	private boolean saveTheConfig = false;
-
 	private long lastSave = 0;
 	private long timedist = 0;
-
 	private File master = null;
 	private File backups = null;
 	private boolean saveServerJar = false;
-
+	private boolean savePluiginJars = false;
 	private boolean currentlySaving = false;
-
 	private boolean automate = true;
-
 	private boolean useFTP = false;
 	private boolean useFTPS = false;
 	private boolean useSFTP = false;
@@ -51,24 +51,71 @@ public class Main extends JavaPlugin {
 	private String userFTP = "User";
 	private String passwordFTP = "password";
 	private int portFTP = 80;
-
 	private String naming_format = "Backup-%date%";
 	private SimpleDateFormat dateformat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
-
 	private String removeFilePath = "";
-
 	private long maxSaveSize = -1;
-
 	private boolean deleteZipOnFail = false;
-
-	BukkitTask br = null;
-
 	private boolean deleteZipOnFTP = false;
 
-	private static List<String> exceptions = new ArrayList<String>();
+	public static File newFile(File destinationDir, ZipEntry zipEntry) throws IOException {
+		File destFile = new File(destinationDir, zipEntry.getName());
 
-	private static String prefix="&6[&3ServerRestorer&6]&8";
-	private static String kickmessage=" Restoring server to previous save. Please rejoin in a few seconds.";
+		String destDirPath = destinationDir.getCanonicalPath();
+		String destFilePath = destFile.getCanonicalPath();
+
+		if (!destFilePath.startsWith(destDirPath + File.separator)) {
+			throw new IOException("Entry is outside of the target dir: " + zipEntry.getName());
+		}
+
+		return destFile;
+	}
+
+	private static boolean isExempt(String path) {
+		path = path.toLowerCase();
+		for (String s : exceptions)
+			if (path.endsWith(s))
+				return true;
+		return false;
+	}
+
+	public static String humanReadableByteCount(long bytes, boolean si) {
+		int unit = si ? 1000 : 1024;
+		if (bytes < unit)
+			return bytes + " B";
+		int exp = (int) (Math.log(bytes) / Math.log(unit));
+		String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
+		return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
+	}
+
+	public static long folderSize(File directory) {
+		long length = 0;
+		for (File file : directory.listFiles()) {
+			if (file.isFile())
+				length += file.length();
+			else
+				length += folderSize(file);
+		}
+		return length;
+	}
+
+	public static File firstFileModified(File dir) {
+		File fl = dir;
+		File[] files = fl.listFiles(new FileFilter() {
+			public boolean accept(File file) {
+				return file.isFile();
+			}
+		});
+		long lastMod = Long.MAX_VALUE;
+		File choice = null;
+		for (File file : files) {
+			if (file.lastModified() < lastMod) {
+				choice = file;
+				lastMod = file.lastModified();
+			}
+		}
+		return choice;
+	}
 
 	public File getMasterFolder() {
 		return master;
@@ -95,6 +142,7 @@ public class Main extends JavaPlugin {
 		if (!backups.exists())
 			backups.mkdirs();
 		saveServerJar = (boolean) a("saveServerJar", false);
+		savePluiginJars = (boolean) a("savePluginJars", false);
 		if (getConfig().contains("Autosave") && !getConfig().contains("AutosaveDelay")) {
 			timedist = toTime((String) a("Autosave", "1D"));
 		} else {
@@ -128,6 +176,9 @@ public class Main extends JavaPlugin {
 			exceptions.add("logs");
 			exceptions.add("crash-reports");
 			exceptions.add("backups");
+			exceptions.add("dynamap");
+			exceptions.add("pixelprinter");
+			exceptions.add("backups");
 		}
 		exceptions = (List<String>) a("exceptions", exceptions);
 
@@ -148,14 +199,14 @@ public class Main extends JavaPlugin {
 							public void run() {
 								save(Bukkit.getConsoleSender());
 							}
-					}.runTaskLater(thi,0);
-					getConfig().set("LastAutosave", lastSave = System.currentTimeMillis());
-					saveConfig();
-					return;
+						}.runTaskLater(thi, 0);
+						getConfig().set("LastAutosave", lastSave = System.currentTimeMillis());
+						saveConfig();
+						return;
+					}
 				}
-			}
-		}.runTaskTimerAsynchronously(this, 20, 20 * 60 * 10);
-	}
+			}.runTaskTimerAsynchronously(this, 20, 20 * 60 * 10);
+		}
 
 		new Metrics(this);
 
@@ -173,13 +224,13 @@ public class Main extends JavaPlugin {
 	public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
 
 		if (args.length == 1) {
-				List<String> list = new ArrayList<>();
-				String[] commands = new String[]{"disableAutoSaver" ,"enableAutoSaver", "restore","save","toggleOptions"};
-				for (String f : commands) {
-					if (f.toLowerCase().startsWith(args[0].toLowerCase()))
-						list.add(f);
-				}
-				return list;
+			List<String> list = new ArrayList<>();
+			String[] commands = new String[]{"disableAutoSaver", "enableAutoSaver", "restore", "save", "toggleOptions"};
+			for (String f : commands) {
+				if (f.toLowerCase().startsWith(args[0].toLowerCase()))
+					list.add(f);
+			}
+			return list;
 
 		}
 
@@ -195,7 +246,6 @@ public class Main extends JavaPlugin {
 		}
 		return super.onTabComplete(sender, command, alias, args);
 	}
-
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -213,8 +263,8 @@ public class Main extends JavaPlugin {
 				sender.sendMessage(prefix + ChatColor.RED + " You do not have permission to use this command.");
 				return true;
 			}
-			if(currentlySaving){
-				sender.sendMessage(prefix+" The server is currently being saved. Please wait.");
+			if (currentlySaving) {
+				sender.sendMessage(prefix + " The server is currently being saved. Please wait.");
 				return true;
 			}
 			if (args.length < 2) {
@@ -235,8 +285,8 @@ public class Main extends JavaPlugin {
 				sender.sendMessage(prefix + ChatColor.RED + " You do not have permission to use this command.");
 				return true;
 			}
-			if(currentlySaving){
-				sender.sendMessage(prefix+" The server is currently being saved. Please wait.");
+			if (currentlySaving) {
+				sender.sendMessage(prefix + " The server is currently being saved. Please wait.");
 				return true;
 			}
 			save(sender);
@@ -302,7 +352,7 @@ public class Main extends JavaPlugin {
 		for (World loaded : Bukkit.getWorlds()) {
 			try {
 				loaded.save();
-				if(loaded.isAutoSave()){
+				if (loaded.isAutoSave()) {
 					autosave.add(loaded);
 					loaded.setAutoSave(false);
 				}
@@ -343,7 +393,7 @@ public class Main extends JavaPlugin {
 							- (tempBackupCheck.exists() ? folderSize(tempBackupCheck) : 0), false))
 							+ " to " + humanReadableByteCount(ff.length(), false));
 					currentlySaving = false;
-					for(World world : autosave)
+					for (World world : autosave)
 						world.setAutoSave(true);
 					if (useSFTP) {
 						try {
@@ -464,7 +514,6 @@ public class Main extends JavaPlugin {
 		return (int) (j * k);
 	}
 
-
 	public void restore(File backup) {
 		//Kick all players
 		for (Player player : Bukkit.getOnlinePlayers())
@@ -505,7 +554,7 @@ public class Main extends JavaPlugin {
 					}
 					fos.close();
 					zipEntry = zis.getNextEntry();
-				}catch (Exception e){
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
@@ -516,20 +565,6 @@ public class Main extends JavaPlugin {
 		}
 		Bukkit.reload();
 	}
-
-	public static File newFile(File destinationDir, ZipEntry zipEntry) throws IOException {
-		File destFile = new File(destinationDir, zipEntry.getName());
-
-		String destDirPath = destinationDir.getCanonicalPath();
-		String destFilePath = destFile.getCanonicalPath();
-
-		if (!destFilePath.startsWith(destDirPath + File.separator)) {
-			throw new IOException("Entry is outside of the target dir: " + zipEntry.getName());
-		}
-
-		return destFile;
-	}
-
 
 	public void zipFolder(String srcFolder, String destZipFile) throws Exception {
 		ZipOutputStream zip = null;
@@ -552,15 +587,11 @@ public class Main extends JavaPlugin {
 				if (folder.isDirectory()) {
 					addFolderToZip(path, srcFile, zip);
 				} else {
-					if (!saveServerJar)
-						if (folder.getName().endsWith("jar")) {
-							if (folder.getName().toLowerCase().startsWith("spigot")
-									|| folder.getName().toLowerCase().startsWith("craftbukkit")
-									|| folder.getName().toLowerCase().startsWith("bukkit")) {
-								return;
-								// Don't save jar files
-							}
+					if (folder.getName().endsWith("jar")) {
+						if (path.contains("plugins") && (!savePluiginJars) || (!path.contains("plugins") && (!saveServerJar))) {
+							return;
 						}
+					}
 
 					byte[] buf = new byte['?'];
 
@@ -601,14 +632,6 @@ public class Main extends JavaPlugin {
 		}
 	}
 
-	private static boolean isExempt(String path) {
-		path = path.toLowerCase();
-		for (String s : exceptions)
-			if (path.endsWith(s))
-				return true;
-		return false;
-	}
-
 	private long toByteSize(String s) {
 		long k = Long.parseLong(s.substring(0, s.length() - 1));
 		if (s.toUpperCase().endsWith("G")) {
@@ -621,43 +644,5 @@ public class Main extends JavaPlugin {
 			k *= 10;
 		}
 		return k;
-	}
-
-	public static String humanReadableByteCount(long bytes, boolean si) {
-		int unit = si ? 1000 : 1024;
-		if (bytes < unit)
-			return bytes + " B";
-		int exp = (int) (Math.log(bytes) / Math.log(unit));
-		String pre = (si ? "kMGTPE" : "KMGTPE").charAt(exp - 1) + (si ? "" : "i");
-		return String.format("%.1f %sB", bytes / Math.pow(unit, exp), pre);
-	}
-
-	public static long folderSize(File directory) {
-		long length = 0;
-		for (File file : directory.listFiles()) {
-			if (file.isFile())
-				length += file.length();
-			else
-				length += folderSize(file);
-		}
-		return length;
-	}
-
-	public static File firstFileModified(File dir) {
-		File fl = dir;
-		File[] files = fl.listFiles(new FileFilter() {
-			public boolean accept(File file) {
-				return file.isFile();
-			}
-		});
-		long lastMod = Long.MAX_VALUE;
-		File choice = null;
-		for (File file : files) {
-			if (file.lastModified() < lastMod) {
-				choice = file;
-				lastMod = file.lastModified();
-			}
-		}
-		return choice;
 	}
 }
