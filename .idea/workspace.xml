@@ -2,12 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="43bd3f57-6231-437d-aabf-a0d688a6d043" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/ServerRestorer.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/changelog.txt" beforeDir="false" afterPath="$PROJECT_DIR$/resources/changelog.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/me/zombie_striker/sr/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/me/zombie_striker/sr/Main.java" afterDir="false" />
     </list>
-    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -42,6 +42,12 @@
     <option name="version" value="1" />
   </component>
   <component name="ProjectId" id="1OaAvjzjckjeD2ubXuKq5CoqimD" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+    <option name="showMembers" value="true" />
+  </component>
   <component name="PropertiesComponent">
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
@@ -49,18 +55,6 @@
     <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.0" />
     <property name="settings.editor.selected.configurable" value="configurable.group.appearance" />
-  </component>
-  <component name="RunDashboard">
-    <option name="ruleStates">
-      <list>
-        <RuleState>
-          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
-        </RuleState>
-        <RuleState>
-          <option name="name" value="StatusDashboardGroupingRule" />
-        </RuleState>
-      </list>
-    </option>
   </component>
   <component name="RunManager">
     <configuration name="ServerRestorer [clean,package]" type="MavenRunConfiguration" factoryName="Maven" nameIsGenerated="true">
@@ -90,6 +84,18 @@
       <method v="2" />
     </configuration>
   </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
+  </component>
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -115,6 +121,24 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="WindowStateProjectService">
+    <state width="1876" height="316" key="GridCell.Tab.0.bottom" timestamp="1579157071200">
+      <screen x="0" y="0" width="1920" height="1160" />
+    </state>
+    <state width="1876" height="316" key="GridCell.Tab.0.bottom/0.0.1920.1160@0.0.1920.1160" timestamp="1579157071200" />
+    <state width="1876" height="316" key="GridCell.Tab.0.center" timestamp="1579157071200">
+      <screen x="0" y="0" width="1920" height="1160" />
+    </state>
+    <state width="1876" height="316" key="GridCell.Tab.0.center/0.0.1920.1160@0.0.1920.1160" timestamp="1579157071200" />
+    <state width="1876" height="316" key="GridCell.Tab.0.left" timestamp="1579157071200">
+      <screen x="0" y="0" width="1920" height="1160" />
+    </state>
+    <state width="1876" height="316" key="GridCell.Tab.0.left/0.0.1920.1160@0.0.1920.1160" timestamp="1579157071200" />
+    <state width="1876" height="316" key="GridCell.Tab.0.right" timestamp="1579157071200">
+      <screen x="0" y="0" width="1920" height="1160" />
+    </state>
+    <state width="1876" height="316" key="GridCell.Tab.0.right/0.0.1920.1160@0.0.1920.1160" timestamp="1579157071200" />
   </component>
   <component name="masterDetails">
     <states>

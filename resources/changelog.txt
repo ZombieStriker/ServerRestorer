@@ -1,3 +1,9 @@
+1.0.25
+    Added option to limit amount of backups made.
+
+1.0.24
+    Fixed failure to make backup file if backup folder does not exist
+
 1.0.23
     Fixed removing spigot/craftbukkit jar
     Added option to not save plugin jars.

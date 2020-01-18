@@ -55,6 +55,7 @@ public class Main extends JavaPlugin {
 	private SimpleDateFormat dateformat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 	private String removeFilePath = "";
 	private long maxSaveSize = -1;
+	private int maxSaveFiles = 1000;
 	private boolean deleteZipOnFail = false;
 	private boolean deleteZipOnFTP = false;
 
@@ -183,6 +184,7 @@ public class Main extends JavaPlugin {
 		exceptions = (List<String>) a("exceptions", exceptions);
 
 		maxSaveSize = toByteSize((String) a("MaxSaveSize", "10G"));
+		maxSaveFiles = (int) a("MaxFileSaved", 1000);
 
 		deleteZipOnFTP = (boolean) a("DeleteZipOnFTPTransfer", false);
 		deleteZipOnFail = (boolean) a("DeleteZipIfFailed", false);
@@ -365,7 +367,16 @@ public class Main extends JavaPlugin {
 			public void run() {
 				try {
 					try {
-						for (int j = 0; j < Math.min(10, backups.listFiles().length - 1); j++) {
+
+						if(backups.listFiles().length > maxSaveFiles){
+							for(int i  = 0; i < backups.listFiles().length-maxSaveFiles; i++){
+								File oldestBack = firstFileModified(backups);
+								sender.sendMessage(prefix + ChatColor.RED + oldestBack.getName()
+										+ ": File goes over max amount of files that can be saved.");
+								oldestBack.delete();
+							}
+						}
+						for (int j = 0; j < Math.min(maxSaveFiles, backups.listFiles().length - 1); j++) {
 							if (folderSize(backups) > maxSaveSize) {
 								File oldestBack = firstFileModified(backups);
 								sender.sendMessage(prefix + ChatColor.RED + oldestBack.getName()
@@ -381,8 +392,10 @@ public class Main extends JavaPlugin {
 					Date d = new Date(System.currentTimeMillis());
 					File ff = new File(getBackupFolder(),
 							naming_format.replaceAll("%date%", dateformat.format(d)) + ".zip");
-					if (!ff.exists())
+					if (!ff.exists()) {
+						ff.mkdirs();
 						ff.createNewFile();
+					}
 					zipFolder(getMasterFolder().getPath(), ff.getPath());
 					long timeDif = (System.currentTimeMillis() - time) / 1000;
 					String timeDifS = (((int) (timeDif / 60)) + "M, " + (timeDif % 60) + "S");
