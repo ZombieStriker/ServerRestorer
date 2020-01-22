@@ -1,3 +1,6 @@
+1.0.26
+    Fixed backups creating a folder instead of a .zip file
+
 1.0.25
     Added option to limit amount of backups made.
 

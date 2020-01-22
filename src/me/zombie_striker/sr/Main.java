@@ -367,7 +367,6 @@ public class Main extends JavaPlugin {
 			public void run() {
 				try {
 					try {
-
 						if(backups.listFiles().length > maxSaveFiles){
 							for(int i  = 0; i < backups.listFiles().length-maxSaveFiles; i++){
 								File oldestBack = firstFileModified(backups);
@@ -377,7 +376,7 @@ public class Main extends JavaPlugin {
 							}
 						}
 						for (int j = 0; j < Math.min(maxSaveFiles, backups.listFiles().length - 1); j++) {
-							if (folderSize(backups) > maxSaveSize) {
+							if (folderSize(backups) >= maxSaveSize) {
 								File oldestBack = firstFileModified(backups);
 								sender.sendMessage(prefix + ChatColor.RED + oldestBack.getName()
 										+ ": This save goes over the max savesize, and has just deleted the oldest file. If you wish to save older backups, copy them to another location.");
@@ -392,14 +391,15 @@ public class Main extends JavaPlugin {
 					Date d = new Date(System.currentTimeMillis());
 					File ff = new File(getBackupFolder(),
 							naming_format.replaceAll("%date%", dateformat.format(d)) + ".zip");
+					if(!getBackupFolder().exists())
+						getBackupFolder().mkdirs();
 					if (!ff.exists()) {
-						ff.mkdirs();
 						ff.createNewFile();
 					}
 					zipFolder(getMasterFolder().getPath(), ff.getPath());
 					long timeDif = (System.currentTimeMillis() - time) / 1000;
 					String timeDifS = (((int) (timeDif / 60)) + "M, " + (timeDif % 60) + "S");
-					sender.sendMessage(prefix + " Done! Packing took:" + timeDifS);
+					sender.sendMessage(prefix + " Done! Backup took:" + timeDifS);
 					File tempBackupCheck = new File(getMasterFolder(), "backups");
 					sender.sendMessage(prefix + " Compressed server with size of "
 							+ (humanReadableByteCount(folderSize(getMasterFolder())
