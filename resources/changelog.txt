@@ -1,3 +1,8 @@
+1.0.27
+    Fixed config to better show how you can backup by hour.
+    Possible fix for resetting config.
+    Added option to include both Days and Hours to automate delay for backups
+
 1.0.26
     Fixed backups creating a folder instead of a .zip file
 

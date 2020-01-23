@@ -137,6 +137,7 @@ public class Main extends JavaPlugin {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void onEnable() {
+		reloadConfig();
 		master = getDataFolder().getAbsoluteFile().getParentFile().getParentFile();
 		String path = ((String) a("getBackupFileDirectory", ""));
 		backups = new File((path.isEmpty() ? master.getPath() : path) + "/backups/");
@@ -145,9 +146,10 @@ public class Main extends JavaPlugin {
 		saveServerJar = (boolean) a("saveServerJar", false);
 		savePluiginJars = (boolean) a("savePluginJars", false);
 		if (getConfig().contains("Autosave") && !getConfig().contains("AutosaveDelay")) {
-			timedist = toTime((String) a("Autosave", "1D"));
+			timedist = toTime((String) a("Autosave", null));
+			timedist = toTime((String) a("AutosaveDelay", "1D,0H"));
 		} else {
-			timedist = toTime((String) a("AutosaveDelay", "1D"));
+			timedist = toTime((String) a("AutosaveDelay", "1D,0H"));
 		}
 		try {
 			lastSave = (long) a("LastAutosave", 0L);
@@ -207,7 +209,7 @@ public class Main extends JavaPlugin {
 						return;
 					}
 				}
-			}.runTaskTimerAsynchronously(this, 20, 20 * 60 * 10);
+			}.runTaskTimerAsynchronously(this, 20, 20*60*10);
 		}
 
 		new Metrics(this);
@@ -515,16 +517,20 @@ public class Main extends JavaPlugin {
 	}
 
 	public long toTime(String time) {
-		long k = 1000;
-		if (time.toUpperCase().endsWith("H")) {
-			k *= 60 * 60;
-		} else if (time.toUpperCase().endsWith("D")) {
-			k *= 60 * 60 * 24;
-		} else {
-			k *= 60 * 60 * 24;
+		long militime = 1000;
+		for(String split : time.split(",")) {
+			long k = 1000;
+			if (split.toUpperCase().endsWith("H")) {
+				k *= 60 * 60;
+			} else if (split.toUpperCase().endsWith("D")) {
+				k *= 60 * 60 * 24;
+			} else {
+				k *= 60 * 60 * 24;
+			}
+			double j = Double.parseDouble(split.substring(0, split.length() - 1));
+			militime+= (j*k);
 		}
-		double j = Double.parseDouble(time.substring(0, time.length() - 1));
-		return (int) (j * k);
+		return (int) (militime);
 	}
 
 	public void restore(File backup) {
