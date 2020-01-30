@@ -126,6 +126,13 @@ public class Main extends JavaPlugin {
 		return backups;
 	}
 
+	public long a(String path, long def) {
+		if (getConfig().contains(path))
+			return getConfig().getLong(path);
+		saveTheConfig = true;
+		getConfig().set(path, def);
+		return def;
+	}
 	public Object a(String path, Object def) {
 		if (getConfig().contains(path))
 			return getConfig().get(path);
@@ -137,7 +144,6 @@ public class Main extends JavaPlugin {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void onEnable() {
-		reloadConfig();
 		master = getDataFolder().getAbsoluteFile().getParentFile().getParentFile();
 		String path = ((String) a("getBackupFileDirectory", ""));
 		backups = new File((path.isEmpty() ? master.getPath() : path) + "/backups/");
@@ -145,17 +151,10 @@ public class Main extends JavaPlugin {
 			backups.mkdirs();
 		saveServerJar = (boolean) a("saveServerJar", false);
 		savePluiginJars = (boolean) a("savePluginJars", false);
-		if (getConfig().contains("Autosave") && !getConfig().contains("AutosaveDelay")) {
-			timedist = toTime((String) a("Autosave", null));
-			timedist = toTime((String) a("AutosaveDelay", "1D,0H"));
-		} else {
-			timedist = toTime((String) a("AutosaveDelay", "1D,0H"));
-		}
-		try {
-			lastSave = (long) a("LastAutosave", 0L);
-		} catch (Error | Exception e4) {
-			lastSave = new Long((Integer) a("LastAutosave", 0L));
-		}
+
+		timedist = toTime((String) a("AutosaveDelay", "1D,0H"));
+		lastSave = a("LastAutosave", 0L);
+
 		automate = (boolean) a("enableautoSaving", true);
 
 		naming_format = (String) a("FileNameFormat", naming_format);
@@ -202,10 +201,10 @@ public class Main extends JavaPlugin {
 							@Override
 							public void run() {
 								save(Bukkit.getConsoleSender());
+								getConfig().set("LastAutosave", lastSave = System.currentTimeMillis());
+								saveConfig();
 							}
 						}.runTaskLater(thi, 0);
-						getConfig().set("LastAutosave", lastSave = System.currentTimeMillis());
-						saveConfig();
 						return;
 					}
 				}
@@ -381,7 +380,7 @@ public class Main extends JavaPlugin {
 							if (folderSize(backups) >= maxSaveSize) {
 								File oldestBack = firstFileModified(backups);
 								sender.sendMessage(prefix + ChatColor.RED + oldestBack.getName()
-										+ ": This save goes over the max savesize, and has just deleted the oldest file. If you wish to save older backups, copy them to another location.");
+										+ ": The current save goes over the max savesize, and so the oldest file has been deleted. If you wish to save older backups, copy them to another location.");
 								oldestBack.delete();
 							} else {
 								break;
@@ -517,9 +516,10 @@ public class Main extends JavaPlugin {
 	}
 
 	public long toTime(String time) {
-		long militime = 1000;
+		long militime = 0;
 		for(String split : time.split(",")) {
-			long k = 1000;
+			split = split.trim();
+			long k = 1;
 			if (split.toUpperCase().endsWith("H")) {
 				k *= 60 * 60;
 			} else if (split.toUpperCase().endsWith("D")) {
@@ -528,9 +528,10 @@ public class Main extends JavaPlugin {
 				k *= 60 * 60 * 24;
 			}
 			double j = Double.parseDouble(split.substring(0, split.length() - 1));
-			militime+= (j*k);
+			militime += (j*k);
 		}
-		return (int) (militime);
+		militime *= 1000;
+		return militime;
 	}
 
 	public void restore(File backup) {
