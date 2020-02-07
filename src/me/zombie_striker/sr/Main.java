@@ -91,6 +91,8 @@ public class Main extends JavaPlugin {
 
 	public static long folderSize(File directory) {
 		long length = 0;
+		if(directory==null)return -1;
+
 		for (File file : directory.listFiles()) {
 			if (file.isFile())
 				length += file.length();
@@ -146,7 +148,7 @@ public class Main extends JavaPlugin {
 	public void onEnable() {
 		master = getDataFolder().getAbsoluteFile().getParentFile().getParentFile();
 		String path = ((String) a("getBackupFileDirectory", ""));
-		backups = new File((path.isEmpty() ? master.getPath() : path) + "/backups/");
+		backups = new File((path.isEmpty() ? master.getPath() : path) +  File.pathSeparator+"backups"+ File.pathSeparator);
 		if (!backups.exists())
 			backups.mkdirs();
 		saveServerJar = (boolean) a("saveServerJar", false);
@@ -390,14 +392,13 @@ public class Main extends JavaPlugin {
 					}
 					final long time = lastSave = System.currentTimeMillis();
 					Date d = new Date(System.currentTimeMillis());
-					File ff = new File(getBackupFolder(),
+					File zipFile = new File(getBackupFolder(),
 							naming_format.replaceAll("%date%", dateformat.format(d)) + ".zip");
-					if(!getBackupFolder().exists())
+					if (!zipFile.exists()) {
 						getBackupFolder().mkdirs();
-					if (!ff.exists()) {
-						ff.createNewFile();
+						zipFile.createNewFile();
 					}
-					zipFolder(getMasterFolder().getPath(), ff.getPath());
+					zipFolder(getMasterFolder().getPath(), zipFile.getPath());
 					long timeDif = (System.currentTimeMillis() - time) / 1000;
 					String timeDifS = (((int) (timeDif / 60)) + "M, " + (timeDif % 60) + "S");
 					sender.sendMessage(prefix + " Done! Backup took:" + timeDifS);
@@ -405,7 +406,7 @@ public class Main extends JavaPlugin {
 					sender.sendMessage(prefix + " Compressed server with size of "
 							+ (humanReadableByteCount(folderSize(getMasterFolder())
 							- (tempBackupCheck.exists() ? folderSize(tempBackupCheck) : 0), false))
-							+ " to " + humanReadableByteCount(ff.length(), false));
+							+ " to " + humanReadableByteCount(zipFile.length(), false));
 					currentlySaving = false;
 					for (World world : autosave)
 						world.setAutoSave(true);
@@ -422,14 +423,14 @@ public class Main extends JavaPlugin {
 							sftp.connect(1000 * 20);
 						} catch (Exception | Error e) {
 							sender.sendMessage(
-									prefix + " FAILED TO SFTP TRANSFER FILE: " + ff.getName() + ". ERROR IN CONSOLE.");
+									prefix + " FAILED TO SFTP TRANSFER FILE: " + zipFile.getName() + ". ERROR IN CONSOLE.");
 							if (deleteZipOnFail)
-								ff.delete();
+								zipFile.delete();
 							e.printStackTrace();
 						}
 					} else if (useFTPS) {
 						sender.sendMessage(prefix + " Starting FTPS Transfer");
-						FileInputStream zipFileStream = new FileInputStream(ff);
+						FileInputStream zipFileStream = new FileInputStream(zipFile);
 						FTPSClient ftpClient = new FTPSClient();
 						try {
 							if (ftpClient.isConnected()) {
@@ -438,14 +439,14 @@ public class Main extends JavaPlugin {
 								ftpClient.disconnect();
 								ftpClient = new FTPSClient();
 							}
-							sendFTP(sender, ff, ftpClient, zipFileStream, removeFilePath);
+							sendFTP(sender, zipFile, ftpClient, zipFileStream, removeFilePath);
 							if (deleteZipOnFTP)
-								ff.delete();
+								zipFile.delete();
 						} catch (Exception | Error e) {
 							sender.sendMessage(
-									prefix + " FAILED TO FTPS TRANSFER FILE: " + ff.getName() + ". ERROR IN CONSOLE.");
+									prefix + " FAILED TO FTPS TRANSFER FILE: " + zipFile.getName() + ". ERROR IN CONSOLE.");
 							if (deleteZipOnFail)
-								ff.delete();
+								zipFile.delete();
 							e.printStackTrace();
 						} finally {
 							try {
@@ -460,7 +461,7 @@ public class Main extends JavaPlugin {
 						}
 					} else if (useFTP) {
 						sender.sendMessage(prefix + " Starting FTP Transfer");
-						FileInputStream zipFileStream = new FileInputStream(ff);
+						FileInputStream zipFileStream = new FileInputStream(zipFile);
 						FTPClient ftpClient = new FTPClient();
 						try {
 							if (ftpClient.isConnected()) {
@@ -469,14 +470,14 @@ public class Main extends JavaPlugin {
 								ftpClient.disconnect();
 								ftpClient = new FTPClient();
 							}
-							sendFTP(sender, ff, ftpClient, zipFileStream, removeFilePath);
+							sendFTP(sender, zipFile, ftpClient, zipFileStream, removeFilePath);
 							if (deleteZipOnFTP)
-								ff.delete();
+								zipFile.delete();
 						} catch (Exception | Error e) {
 							sender.sendMessage(
-									prefix + " FAILED TO FTP TRANSFER FILE: " + ff.getName() + ". ERROR IN CONSOLE.");
+									prefix + " FAILED TO FTP TRANSFER FILE: " + zipFile.getName() + ". ERROR IN CONSOLE.");
 							if (deleteZipOnFail)
-								ff.delete();
+								zipFile.delete();
 							e.printStackTrace();
 						} finally {
 							try {
@@ -497,7 +498,7 @@ public class Main extends JavaPlugin {
 		}.runTaskAsynchronously(this);
 	}
 
-	public void sendFTP(CommandSender sender, File ff, FTPClient ftpClient, FileInputStream zipFileStream, String path)
+	public void sendFTP(CommandSender sender, File zipFile, FTPClient ftpClient, FileInputStream zipFileStream, String path)
 			throws SocketException, IOException {
 		ftpClient.connect(serverFTP, portFTP);
 		ftpClient.login(userFTP, passwordFTP);
@@ -505,7 +506,7 @@ public class Main extends JavaPlugin {
 
 		ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
 
-		boolean done = ftpClient.storeFile(path + ff.getName(), zipFileStream);
+		boolean done = ftpClient.storeFile(path + zipFile.getName(), zipFileStream);
 		zipFileStream.close();
 		if (done) {
 			sender.sendMessage(prefix + " Transfered backup using FTP!");
@@ -616,7 +617,7 @@ public class Main extends JavaPlugin {
 					byte[] buf = new byte['?'];
 
 					FileInputStream in = new FileInputStream(srcFile);
-					zip.putNextEntry(new ZipEntry(path + "/" + folder.getName()));
+					zip.putNextEntry(new ZipEntry(path + File.pathSeparator + folder.getName()));
 					int len;
 					while ((len = in.read(buf)) > 0) {
 						zip.write(buf, 0, len);
@@ -631,20 +632,16 @@ public class Main extends JavaPlugin {
 
 	private void addFolderToZip(String path, String srcFolder, ZipOutputStream zip) {
 		if ((!path.toLowerCase().contains("backups")) && (!isExempt(path))) {
-			// if (main.getConfiguration().getBoolean("debug")) {
-			// }
 			try {
 				File folder = new File(srcFolder);
-				// this.savedBytes += folder.length();
-				// Backup.updatePercent(this.size, this.savedBytes);
 				String[] arrayOfString;
 				int j = (arrayOfString = folder.list()).length;
 				for (int i = 0; i < j; i++) {
 					String fileName = arrayOfString[i];
 					if (path.equals("")) {
-						addFileToZip(folder.getName(), srcFolder + "/" + fileName, zip);
+						addFileToZip(folder.getName(), srcFolder + File.pathSeparator + fileName, zip);
 					} else {
-						addFileToZip(path + "/" + folder.getName(), srcFolder + "/" + fileName, zip);
+						addFileToZip(path +  File.pathSeparator + folder.getName(), srcFolder +  File.pathSeparator + fileName, zip);
 					}
 				}
 			} catch (Exception e) {

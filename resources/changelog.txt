@@ -1,3 +1,7 @@
+1.0.29
+    Fixed File separator for systems that use \ instead of /
+    Fixed folder creation system.
+
 1.0.28
     Fixed timer
     Fixed long error.
