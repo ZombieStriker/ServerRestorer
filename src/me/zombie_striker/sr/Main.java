@@ -148,7 +148,7 @@ public class Main extends JavaPlugin {
 	public void onEnable() {
 		master = getDataFolder().getAbsoluteFile().getParentFile().getParentFile();
 		String path = ((String) a("getBackupFileDirectory", ""));
-		backups = new File((path.isEmpty() ? master.getPath() : path) +  File.pathSeparator+"backups"+ File.pathSeparator);
+		backups = new File((path.isEmpty() ? master.getPath() : path) +  File.separator+"backups"+ File.separator);
 		if (!backups.exists())
 			backups.mkdirs();
 		saveServerJar = (boolean) a("saveServerJar", false);
@@ -395,7 +395,7 @@ public class Main extends JavaPlugin {
 					File zipFile = new File(getBackupFolder(),
 							naming_format.replaceAll("%date%", dateformat.format(d)) + ".zip");
 					if (!zipFile.exists()) {
-						getBackupFolder().mkdirs();
+						zipFile.getParentFile().mkdirs();
 						zipFile.createNewFile();
 					}
 					zipFolder(getMasterFolder().getPath(), zipFile.getPath());
@@ -617,7 +617,7 @@ public class Main extends JavaPlugin {
 					byte[] buf = new byte['?'];
 
 					FileInputStream in = new FileInputStream(srcFile);
-					zip.putNextEntry(new ZipEntry(path + File.pathSeparator + folder.getName()));
+					zip.putNextEntry(new ZipEntry(path + File.separator + folder.getName()));
 					int len;
 					while ((len = in.read(buf)) > 0) {
 						zip.write(buf, 0, len);
@@ -625,8 +625,13 @@ public class Main extends JavaPlugin {
 					in.close();
 				}
 			}
-		} catch (Exception e) {
-			Bukkit.getConsoleSender().sendMessage(prefix + " FAILED TO ZIP FILE: " + srcFile);
+		}catch (FileNotFoundException e4){
+			Bukkit.getConsoleSender().sendMessage(prefix + " FAILED TO ZIP FILE: " + srcFile+" Reason: "+e4.getClass().getName());
+			e4.printStackTrace();
+		}catch (IOException e5){
+			Bukkit.getConsoleSender().sendMessage(prefix + " FAILED TO ZIP FILE: " + srcFile+" Reason: "+e5.getClass().getName());
+			e5.printStackTrace();
+
 		}
 	}
 
@@ -639,9 +644,9 @@ public class Main extends JavaPlugin {
 				for (int i = 0; i < j; i++) {
 					String fileName = arrayOfString[i];
 					if (path.equals("")) {
-						addFileToZip(folder.getName(), srcFolder + File.pathSeparator + fileName, zip);
+						addFileToZip(folder.getName(), srcFolder + File.separator + fileName, zip);
 					} else {
-						addFileToZip(path +  File.pathSeparator + folder.getName(), srcFolder +  File.pathSeparator + fileName, zip);
+						addFileToZip(path +  File.separator + folder.getName(), srcFolder +  File.separator + fileName, zip);
 					}
 				}
 			} catch (Exception e) {
