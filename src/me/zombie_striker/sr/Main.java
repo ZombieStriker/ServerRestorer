@@ -25,6 +25,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -58,6 +59,8 @@ public class Main extends JavaPlugin {
 	private int maxSaveFiles = 1000;
 	private boolean deleteZipOnFail = false;
 	private boolean deleteZipOnFTP = false;
+
+	private int compression = Deflater.BEST_COMPRESSION;
 
 	public static File newFile(File destinationDir, ZipEntry zipEntry) throws IOException {
 		File destFile = new File(destinationDir, zipEntry.getName());
@@ -174,6 +177,9 @@ public class Main extends JavaPlugin {
 		userFTP = (String) a("FTPUsername", userFTP);
 		passwordFTP = (String) a("FTPPassword", passwordFTP);
 
+
+		compression = (int) a("CompressionLevel_Max_9", compression);
+
 		removeFilePath = (String) a("FTP_Directory", removeFilePath);
 
 		if (!getConfig().contains("exceptions")) {
@@ -215,11 +221,10 @@ public class Main extends JavaPlugin {
 
 		new Metrics(this);
 
-		if (Bukkit.getPluginManager().getPlugin("PluginConstructorAPI") == null)
-			// new DependencyDownloader(this, 276723);
+		/*if (Bukkit.getPluginManager().getPlugin("PluginConstructorAPI") == null)
 			GithubDependDownloader.autoUpdate(this,
 					new File(getDataFolder().getParentFile(), "PluginConstructorAPI.jar"), "ZombieStriker",
-					"PluginConstructorAPI", "PluginConstructorAPI.jar");
+					"PluginConstructorAPI", "PluginConstructorAPI.jar");*/
 
 		new Updater(this, 280536);
 
@@ -593,6 +598,9 @@ public class Main extends JavaPlugin {
 
 		fileWriter = new FileOutputStream(destZipFile);
 		zip = new ZipOutputStream(fileWriter);
+
+
+		zip.setLevel(compression);
 
 		addFolderToZip("", srcFolder, zip);
 		zip.flush();

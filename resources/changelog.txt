@@ -1,3 +1,6 @@
+1.0.31
+    Added option to specify compression level.
+
 1.0.30
     Another fix for folder creation system.
     Fixed backups going to wrong directory.

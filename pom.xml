@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>me.zombie_striker</groupId>
   <artifactId>ServerRestorer</artifactId>
-  <version>1.0.30</version>
+  <version>1.0.31</version>
     <repositories>
 
         <repository>
