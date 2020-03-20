@@ -60,6 +60,8 @@ public class Main extends JavaPlugin {
 	private boolean deleteZipOnFail = false;
 	private boolean deleteZipOnFTP = false;
 
+
+
 	private int compression = Deflater.BEST_COMPRESSION;
 
 	public static File newFile(File destinationDir, ZipEntry zipEntry) throws IOException {
@@ -186,7 +188,7 @@ public class Main extends JavaPlugin {
 			exceptions.add("logs");
 			exceptions.add("crash-reports");
 			exceptions.add("backups");
-			exceptions.add("dynamap");
+			exceptions.add("dynmap");
 			exceptions.add("pixelprinter");
 			exceptions.add("backups");
 		}
@@ -226,7 +228,7 @@ public class Main extends JavaPlugin {
 					new File(getDataFolder().getParentFile(), "PluginConstructorAPI.jar"), "ZombieStriker",
 					"PluginConstructorAPI", "PluginConstructorAPI.jar");*/
 
-		new Updater(this, 280536);
+		//new Updater(this, 280536);
 
 	}
 
@@ -235,7 +237,7 @@ public class Main extends JavaPlugin {
 
 		if (args.length == 1) {
 			List<String> list = new ArrayList<>();
-			String[] commands = new String[]{"disableAutoSaver", "enableAutoSaver", "restore", "save", "toggleOptions"};
+			String[] commands = new String[]{"disableAutoSaver", "enableAutoSaver", "restore", "save","stop", "toggleOptions"};
 			for (String f : commands) {
 				if (f.toLowerCase().startsWith(args[0].toLowerCase()))
 					list.add(f);
@@ -262,6 +264,7 @@ public class Main extends JavaPlugin {
 		if (args.length == 0) {
 			sender.sendMessage(ChatColor.GOLD + "---===+Server Restorer+===---");
 			sender.sendMessage("/sr save : Saves the server");
+			sender.sendMessage("/sr stop : Stops creating a backup of the server");
 			sender.sendMessage("/sr restore <backup> : Restores server to previous backup (automatically restarts)");
 			sender.sendMessage("/sr enableAutoSaver [1H,6H,1D,7D] : Configure how long it takes to autosave");
 			sender.sendMessage("/sr disableAutoSaver : Disables the autosaver");
@@ -288,6 +291,19 @@ public class Main extends JavaPlugin {
 			}
 			restore(backup);
 			sender.sendMessage(prefix + " Restoration complete.");
+			return true;
+		}
+
+		if (args[0].equalsIgnoreCase("stop")) {
+			if (!sender.hasPermission("serverrestorer.save")) {
+				sender.sendMessage(prefix + ChatColor.RED + " You do not have permission to use this command.");
+				return true;
+			}
+			if (currentlySaving) {
+				currentlySaving=false;
+				return true;
+			}
+			sender.sendMessage(prefix + " The server is not currently being saved.");
 			return true;
 		}
 		if (args[0].equalsIgnoreCase("save")) {
@@ -349,7 +365,7 @@ public class Main extends JavaPlugin {
 				sender.sendMessage(prefix + ChatColor.RED + " You do not have permission to use this command.");
 				return true;
 			}
-			sender.sendMessage(prefix + " Comeing soon !");
+			sender.sendMessage(prefix + " Coming soon !");
 			return true;
 		}
 		return true;
@@ -401,11 +417,23 @@ public class Main extends JavaPlugin {
 							naming_format.replaceAll("%date%", dateformat.format(d)) + ".zip");
 					if (!zipFile.exists()) {
 						zipFile.getParentFile().mkdirs();
+						zipFile = new File(getBackupFolder(),
+								naming_format.replaceAll("%date%", dateformat.format(d)) + ".zip");
 						zipFile.createNewFile();
 					}
 					zipFolder(getMasterFolder().getPath(), zipFile.getPath());
+
 					long timeDif = (System.currentTimeMillis() - time) / 1000;
 					String timeDifS = (((int) (timeDif / 60)) + "M, " + (timeDif % 60) + "S");
+
+					if(!currentlySaving){
+						for (World world : autosave)
+							world.setAutoSave(true);
+						sender.sendMessage(prefix + " Backup canceled.");
+						cancel();
+						return;
+					}
+
 					sender.sendMessage(prefix + " Done! Backup took:" + timeDifS);
 					File tempBackupCheck = new File(getMasterFolder(), "backups");
 					sender.sendMessage(prefix + " Compressed server with size of "
@@ -612,6 +640,8 @@ public class Main extends JavaPlugin {
 			if ((!isExempt(path))) {
 				File folder = new File(srcFile);
 
+				if(!currentlySaving)
+					return;
 				// this.savedBytes += folder.length();
 				if (folder.isDirectory()) {
 					addFolderToZip(path, srcFile, zip);
@@ -650,6 +680,8 @@ public class Main extends JavaPlugin {
 				String[] arrayOfString;
 				int j = (arrayOfString = folder.list()).length;
 				for (int i = 0; i < j; i++) {
+					if(!currentlySaving)
+						break;
 					String fileName = arrayOfString[i];
 					if (path.equals("")) {
 						addFileToZip(folder.getName(), srcFolder + File.separator + fileName, zip);
