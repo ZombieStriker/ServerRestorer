@@ -1,3 +1,7 @@
+1.0.33
+    Fixed file name time offset
+    Reduced saving check delay
+
 1.0.32
     Possible Fix for file crash
 

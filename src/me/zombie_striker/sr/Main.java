@@ -218,7 +218,7 @@ public class Main extends JavaPlugin {
 						return;
 					}
 				}
-			}.runTaskTimerAsynchronously(this, 20, 20*60*10);
+			}.runTaskTimerAsynchronously(this, 20, 20*60);
 		}
 
 		new Metrics(this);
@@ -412,7 +412,7 @@ public class Main extends JavaPlugin {
 					} catch (Error | Exception e) {
 					}
 					final long time = lastSave = System.currentTimeMillis();
-					Date d = new Date(System.currentTimeMillis());
+					Date d = new Date(lastSave);
 					File zipFile = new File(getBackupFolder(),
 							naming_format.replaceAll("%date%", dateformat.format(d)) + ".zip");
 					if (!zipFile.exists()) {
