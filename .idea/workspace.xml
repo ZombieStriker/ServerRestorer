@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="43bd3f57-6231-437d-aabf-a0d688a6d043" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/resources/changelog.txt" beforeDir="false" afterPath="$PROJECT_DIR$/resources/changelog.txt" afterDir="false" />
@@ -32,7 +33,6 @@
   <component name="MavenImportPreferences">
     <option name="importingSettings">
       <MavenImportingSettings>
-        <option name="importAutomatically" value="true" />
         <option name="jdkForImporter" value="10" />
       </MavenImportingSettings>
     </option>
@@ -43,7 +43,6 @@
   <component name="ProjectId" id="1OaAvjzjckjeD2ubXuKq5CoqimD" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
-    <option name="showExcludedFiles" value="true" />
     <option name="showLibraryContents" value="true" />
     <option name="showMembers" value="true" />
   </component>
@@ -83,18 +82,6 @@
       <method v="2" />
     </configuration>
   </component>
-  <component name="ServiceViewManager">
-    <option name="viewStates">
-      <list>
-        <serviceView>
-          <treeState>
-            <expand />
-            <select />
-          </treeState>
-        </serviceView>
-      </list>
-    </option>
-  </component>
   <component name="SvnConfiguration">
     <configuration />
   </component>
@@ -113,35 +100,34 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State>
-              <option name="COLUMN_ORDER" />
-            </State>
+            <State />
           </value>
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="WindowStateProjectService">
     <state x="693" y="268" key="#com.intellij.ide.util.frameworkSupport.AddFrameworkSupportDialog" timestamp="1584491745542">
       <screen x="0" y="0" width="1920" height="1160" />
     </state>
     <state x="693" y="268" key="#com.intellij.ide.util.frameworkSupport.AddFrameworkSupportDialog/0.0.1920.1160@0.0.1920.1160" timestamp="1584491745542" />
-    <state width="1876" height="316" key="GridCell.Tab.0.bottom" timestamp="1585695357752">
+    <state width="1876" height="316" key="GridCell.Tab.0.bottom" timestamp="1589074367969">
       <screen x="0" y="0" width="1920" height="1160" />
     </state>
-    <state width="1876" height="316" key="GridCell.Tab.0.bottom/0.0.1920.1160@0.0.1920.1160" timestamp="1585695357752" />
-    <state width="1876" height="316" key="GridCell.Tab.0.center" timestamp="1585695357751">
+    <state width="1876" height="316" key="GridCell.Tab.0.bottom/0.0.1920.1160@0.0.1920.1160" timestamp="1589074367969" />
+    <state width="1876" height="316" key="GridCell.Tab.0.center" timestamp="1589074367969">
       <screen x="0" y="0" width="1920" height="1160" />
     </state>
-    <state width="1876" height="316" key="GridCell.Tab.0.center/0.0.1920.1160@0.0.1920.1160" timestamp="1585695357751" />
-    <state width="1876" height="316" key="GridCell.Tab.0.left" timestamp="1585695357751">
+    <state width="1876" height="316" key="GridCell.Tab.0.center/0.0.1920.1160@0.0.1920.1160" timestamp="1589074367969" />
+    <state width="1876" height="316" key="GridCell.Tab.0.left" timestamp="1589074367969">
       <screen x="0" y="0" width="1920" height="1160" />
     </state>
-    <state width="1876" height="316" key="GridCell.Tab.0.left/0.0.1920.1160@0.0.1920.1160" timestamp="1585695357751" />
-    <state width="1876" height="316" key="GridCell.Tab.0.right" timestamp="1585695357751">
+    <state width="1876" height="316" key="GridCell.Tab.0.left/0.0.1920.1160@0.0.1920.1160" timestamp="1589074367969" />
+    <state width="1876" height="316" key="GridCell.Tab.0.right" timestamp="1589074367969">
       <screen x="0" y="0" width="1920" height="1160" />
     </state>
-    <state width="1876" height="316" key="GridCell.Tab.0.right/0.0.1920.1160@0.0.1920.1160" timestamp="1585695357751" />
+    <state width="1876" height="316" key="GridCell.Tab.0.right/0.0.1920.1160@0.0.1920.1160" timestamp="1589074367969" />
   </component>
   <component name="masterDetails">
     <states>

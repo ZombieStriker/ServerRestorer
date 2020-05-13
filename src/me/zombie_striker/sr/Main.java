@@ -78,9 +78,9 @@ public class Main extends JavaPlugin {
 	}
 
 	private static boolean isExempt(String path) {
-		path = path.toLowerCase();
+		path = path.toLowerCase().trim().replaceAll("/","\\");
 		for (String s : exceptions)
-			if (path.endsWith(s))
+			if (path.endsWith(s.toLowerCase().trim()))
 				return true;
 		return false;
 	}
@@ -190,7 +190,6 @@ public class Main extends JavaPlugin {
 			exceptions.add("backups");
 			exceptions.add("dynmap");
 			exceptions.add("pixelprinter");
-			exceptions.add("backups");
 		}
 		exceptions = (List<String>) a("exceptions", exceptions);
 
@@ -272,6 +271,10 @@ public class Main extends JavaPlugin {
 			return true;
 		}
 		if (args[0].equalsIgnoreCase("restore")) {
+			if(true) {
+				sender.sendMessage(prefix+ "Restore feature is temporarily disabled. Please load the files manually.");
+			return true;
+			}
 			if (!sender.hasPermission("serverrestorer.restore")) {
 				sender.sendMessage(prefix + ChatColor.RED + " You do not have permission to use this command.");
 				return true;
@@ -569,6 +572,7 @@ public class Main extends JavaPlugin {
 	}
 
 	public void restore(File backup) {
+
 		//Kick all players
 		for (Player player : Bukkit.getOnlinePlayers())
 			player.kickPlayer(kickmessage);
@@ -584,13 +588,19 @@ public class Main extends JavaPlugin {
 			}
 		}
 		//Unload all worlds.
+		List<String> names = new ArrayList<>();
 		for (World w : Bukkit.getWorlds()) {
 			for (Chunk c : w.getLoadedChunks()) {
 				c.unload(false);
 			}
-			Bukkit.unloadWorld(w, false);
+			names.add(w.getName());
+			Bukkit.unloadWorld(w, true);
 		}
-
+		for(String worldnames : names){
+			File worldFile = new File(getMasterFolder(),worldnames);
+			if(worldFile.exists())
+				worldFile.delete();
+		}
 
 		//Start overriding files.
 		File parentTo = getMasterFolder().getParentFile();
@@ -617,7 +627,7 @@ public class Main extends JavaPlugin {
 		} catch (Exception e4) {
 			e4.printStackTrace();
 		}
-		Bukkit.reload();
+		Bukkit.shutdown();
 	}
 
 	public void zipFolder(String srcFolder, String destZipFile) throws Exception {
@@ -637,8 +647,8 @@ public class Main extends JavaPlugin {
 
 	private void addFileToZip(String path, String srcFile, ZipOutputStream zip) {
 		try {
-			if ((!isExempt(path))) {
-				File folder = new File(srcFile);
+			File folder = new File(srcFile);
+			if ((!isExempt(path+"\\"+folder.getName()))) {
 
 				if(!currentlySaving)
 					return;
@@ -667,8 +677,12 @@ public class Main extends JavaPlugin {
 			Bukkit.getConsoleSender().sendMessage(prefix + " FAILED TO ZIP FILE: " + srcFile+" Reason: "+e4.getClass().getName());
 			e4.printStackTrace();
 		}catch (IOException e5){
-			Bukkit.getConsoleSender().sendMessage(prefix + " FAILED TO ZIP FILE: " + srcFile+" Reason: "+e5.getClass().getName());
-			e5.printStackTrace();
+			if(!srcFile.endsWith(".db")) {
+				Bukkit.getConsoleSender().sendMessage(prefix + " FAILED TO ZIP FILE: " + srcFile + " Reason: " + e5.getClass().getName());
+				e5.printStackTrace();
+			}else{
+				Bukkit.getConsoleSender().sendMessage(prefix + " Skipping file " + srcFile +" due to another process that has locked a portion of the file");
+			}
 
 		}
 	}

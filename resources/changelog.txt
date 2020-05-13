@@ -1,3 +1,10 @@
+1.0.35
+    - Temporarily disabled restore command.
+    - Added option to exempt individual files.
+
+1.0.34
+    - Added message in case a file was a database file that os being skipped.
+
 1.0.33
     Fixed file name time offset
     Reduced saving check delay
