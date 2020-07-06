@@ -11,6 +11,7 @@ permissions:
     description: Gives access to all PixelPrinter commands
     children:
       serverrestorer.save: true
+      serverrestorer.command: true
       serverrestorer.restore: true
 author:
   Zombie_Striker

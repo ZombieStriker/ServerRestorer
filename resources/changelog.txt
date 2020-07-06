@@ -1,3 +1,9 @@
+1.0.37
+    -Reverted code to 1.0.34. Should fix issue with linux machines
+
+1.0.36
+    - Added permission serverrestorer.command to only allow players with this permission to use the commands.
+
 1.0.35
     - Temporarily disabled restore command.
     - Added option to exempt individual files.

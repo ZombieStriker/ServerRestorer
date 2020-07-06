@@ -60,6 +60,8 @@ public class Main extends JavaPlugin {
 	private boolean deleteZipOnFail = false;
 	private boolean deleteZipOnFTP = false;
 
+	private String separator = File.separator;
+
 
 
 	private int compression = Deflater.BEST_COMPRESSION;
@@ -78,7 +80,7 @@ public class Main extends JavaPlugin {
 	}
 
 	private static boolean isExempt(String path) {
-		path = path.toLowerCase().trim().replaceAll("/","\\");
+		path = path.toLowerCase().trim();
 		for (String s : exceptions)
 			if (path.endsWith(s.toLowerCase().trim()))
 				return true;
@@ -198,6 +200,7 @@ public class Main extends JavaPlugin {
 
 		deleteZipOnFTP = (boolean) a("DeleteZipOnFTPTransfer", false);
 		deleteZipOnFail = (boolean) a("DeleteZipIfFailed", false);
+		separator = (String) a("FolderSeparator", separator);
 		if (saveTheConfig)
 			saveConfig();
 		if (automate) {
@@ -260,6 +263,10 @@ public class Main extends JavaPlugin {
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+		if (!sender.hasPermission("serverrestorer.command")) {
+			sender.sendMessage(prefix + ChatColor.RED + " You do not have permission to use this command.");
+			return true;
+		}
 		if (args.length == 0) {
 			sender.sendMessage(ChatColor.GOLD + "---===+Server Restorer+===---");
 			sender.sendMessage("/sr save : Saves the server");
@@ -648,7 +655,7 @@ public class Main extends JavaPlugin {
 	private void addFileToZip(String path, String srcFile, ZipOutputStream zip) {
 		try {
 			File folder = new File(srcFile);
-			if ((!isExempt(path+"\\"+folder.getName()))) {
+			if (!isExempt(srcFile)) {
 
 				if(!currentlySaving)
 					return;
@@ -665,7 +672,7 @@ public class Main extends JavaPlugin {
 					byte[] buf = new byte['?'];
 
 					FileInputStream in = new FileInputStream(srcFile);
-					zip.putNextEntry(new ZipEntry(path + File.separator + folder.getName()));
+					zip.putNextEntry(new ZipEntry(path + separator + folder.getName()));
 					int len;
 					while ((len = in.read(buf)) > 0) {
 						zip.write(buf, 0, len);
@@ -698,9 +705,9 @@ public class Main extends JavaPlugin {
 						break;
 					String fileName = arrayOfString[i];
 					if (path.equals("")) {
-						addFileToZip(folder.getName(), srcFolder + File.separator + fileName, zip);
+						addFileToZip(folder.getName(), srcFolder + separator + fileName, zip);
 					} else {
-						addFileToZip(path +  File.separator + folder.getName(), srcFolder +  File.separator + fileName, zip);
+						addFileToZip(path + separator + folder.getName(), srcFolder +  separator + fileName, zip);
 					}
 				}
 			} catch (Exception e) {
