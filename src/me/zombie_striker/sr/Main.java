@@ -191,6 +191,7 @@ public class Main extends JavaPlugin {
 			exceptions.add("crash-reports");
 			exceptions.add("backups");
 			exceptions.add("dynmap");
+			exceptions.add(".lock");
 			exceptions.add("pixelprinter");
 		}
 		exceptions = (List<String>) a("exceptions", exceptions);

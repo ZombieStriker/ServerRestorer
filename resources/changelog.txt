@@ -1,5 +1,11 @@
+1.0.38c
+    - possible fix to chat spam
+
+1.0.38
+    - Added .lock to the exempt list
+
 1.0.37
-    -Reverted code to 1.0.34. Should fix issue with linux machines
+    - Reverted code to 1.0.34. Should fix issue with linux machines
 
 1.0.36
     - Added permission serverrestorer.command to only allow players with this permission to use the commands.
