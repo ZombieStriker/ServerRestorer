@@ -176,7 +176,7 @@ public class Main extends JavaPlugin {
 		useFTP = (boolean) a("EnableFTP", false);
 		useFTPS = (boolean) a("EnableFTPS", false);
 		useSFTP = (boolean) a("EnableSFTP", false);
-		serverFTP = (String) a("FTPAdress", serverFTP);
+		serverFTP = (String) a("FTPAddress", serverFTP);
 		portFTP = (int) a("FTPPort", portFTP);
 		userFTP = (String) a("FTPUsername", userFTP);
 		passwordFTP = (String) a("FTPPassword", passwordFTP);
