@@ -1,3 +1,6 @@
+1.0.39
+    - Added option to specify what hour of the day it will backup.
+
 1.0.38c
     - possible fix to chat spam
 

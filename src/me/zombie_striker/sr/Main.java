@@ -22,9 +22,7 @@ import org.bukkit.scheduler.BukkitTask;
 import java.io.*;
 import java.net.SocketException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -59,6 +57,8 @@ public class Main extends JavaPlugin {
 	private int maxSaveFiles = 1000;
 	private boolean deleteZipOnFail = false;
 	private boolean deleteZipOnFTP = false;
+
+	private int hourToSaveAt = -1;
 
 	private String separator = File.separator;
 
@@ -186,6 +186,8 @@ public class Main extends JavaPlugin {
 
 		removeFilePath = (String) a("FTP_Directory", removeFilePath);
 
+		hourToSaveAt = (int) a("AutoBackup-HourToBackup", hourToSaveAt);
+
 		if (!getConfig().contains("exceptions")) {
 			exceptions.add("logs");
 			exceptions.add("crash-reports");
@@ -209,12 +211,16 @@ public class Main extends JavaPlugin {
 			br = new BukkitRunnable() {
 				@Override
 				public void run() {
-					if (System.currentTimeMillis() - lastSave >= timedist) {
+					Calendar calendar = GregorianCalendar.getInstance(); // creates a new calendar instance
+					calendar.setTime(new Date());   // assigns calendar to given date
+					int hour = calendar.get(Calendar.HOUR_OF_DAY);
+
+					if (System.currentTimeMillis() - lastSave >= timedist && (hourToSaveAt==-1 || hourToSaveAt == hour)) {
 						new BukkitRunnable() {
 							@Override
 							public void run() {
+								getConfig().set("LastAutosave", lastSave = (System.currentTimeMillis()-5000));
 								save(Bukkit.getConsoleSender());
-								getConfig().set("LastAutosave", lastSave = System.currentTimeMillis());
 								saveConfig();
 							}
 						}.runTaskLater(thi, 0);
