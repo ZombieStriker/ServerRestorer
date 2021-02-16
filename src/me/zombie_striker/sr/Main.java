@@ -46,10 +46,14 @@ public class Main extends JavaPlugin {
 	private boolean useFTP = false;
 	private boolean useFTPS = false;
 	private boolean useSFTP = false;
+	private boolean useKeyAuthSFTP = false;
+	private boolean useKeyWithPassphrase = false;
 	private String serverFTP = "www.example.com";
 	private String userFTP = "User";
 	private String passwordFTP = "password";
-	private String remoteFilePathSFTP ="";
+	private String remoteFilePathSFTP = "";
+	private String privateKeyPathSFTP = "";
+	private String privateKeyPassphrase = "";
 	private int portFTP = 80;
 	private String naming_format = "Backup-%date%";
 	private SimpleDateFormat dateformat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
@@ -178,12 +182,16 @@ public class Main extends JavaPlugin {
 		useFTP = (boolean) a("EnableFTP", false);
 		useFTPS = (boolean) a("EnableFTPS", false);
 		useSFTP = (boolean) a("EnableSFTP", false);
+		useKeyAuthSFTP = (boolean) a("UseKeyAuthSFTP",false);
+		useKeyWithPassphrase = (boolean) a("UseKeyWithPassphrase", false);
 		serverFTP = (String) a("FTPAdress", serverFTP);
 		portFTP = (int) a("FTPPort", portFTP);
 		userFTP = (String) a("FTPUsername", userFTP);
 		passwordFTP = (String) a("FTPPassword", passwordFTP);
 		remoteFilePathSFTP = (String) a("RemoteFilepathSFTP", remoteFilePathSFTP);
-
+		privateKeyPathSFTP = (String) a("PrivateKeyPathSFTP",privateKeyPathSFTP);
+		privateKeyPassphrase = (String) a("PrivateKeyPassphrase",privateKeyPassphrase);
+		
 		compression = (int) a("CompressionLevel_Max_9", compression);
 
 		removeFilePath = (String) a("FTP_Directory", removeFilePath);
@@ -469,19 +477,28 @@ public class Main extends JavaPlugin {
 						try {
 							sender.sendMessage(prefix + " Starting SFTP Transfer");
 							session = jsch.getSession(userFTP, serverFTP, portFTP);
+							if(useKeyAuthSFTP) {
+								if(useKeyWithPassphrase) {
+									jsch.addIdentity(privateKeyPathSFTP,privateKeyPassphrase);
+								} else {
+									jsch.addIdentity(privateKeyPathSFTP);
+								}
+								session.setConfig("PreferredAuthentications", "publickey,keyboard-interactive,password");
+							} else {
+								session.setConfig("PreferredAuthentications", "password");
+								session.setPassword(passwordFTP);
+							}
 							//allows the server to connect to unknown hosts
 							if(allowUnknownHost) {
 							session.setConfig( "StrictHostKeyChecking", "no" );
 							}
-							session.setConfig("PreferredAuthentications", "password");
-							session.setPassword(passwordFTP);
 							session.connect(1000 * 20);
 							Channel channel = session.openChannel("sftp");
 							ChannelSftp sftp = (ChannelSftp) channel;
 							sftp.connect(1000 * 20);
 							FileInputStream zipFileStream = new FileInputStream(zipFile);
 							sftp.put(zipFileStream,remoteFilePathSFTP+ zipFile.getName());
-							sender.sendMessage(prefix+ "Transfer successful");
+							sender.sendMessage(prefix+ " Transfer successful");
 							zipFileStream.close();
 							sftp.exit();
 							if (deleteZipOnFTP)
@@ -494,7 +511,7 @@ public class Main extends JavaPlugin {
 							e.printStackTrace();
 						}finally {
 							if (session.isConnected()) {
-								sender.sendMessage(prefix + "Disconnecting");
+								sender.sendMessage(prefix + " Disconnecting");
 								session.disconnect();
 							}
 					}} else if (useFTPS) {
