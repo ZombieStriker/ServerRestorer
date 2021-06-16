@@ -411,7 +411,7 @@ public class Main extends JavaPlugin {
 						if(backups.listFiles().length > maxSaveFiles){
 							for(int i  = 0; i < backups.listFiles().length-maxSaveFiles; i++){
 								File oldestBack = firstFileModified(backups);
-								sender.sendMessage(prefix + ChatColor.RED + oldestBack.getName()
+								sender.sendMessage(prefix + ChatColor.RED + " " + oldestBack.getName()
 										+ ": File goes over max amount of files that can be saved.");
 								oldestBack.delete();
 							}
@@ -419,7 +419,7 @@ public class Main extends JavaPlugin {
 						for (int j = 0; j < Math.min(maxSaveFiles, backups.listFiles().length - 1); j++) {
 							if (folderSize(backups) >= maxSaveSize) {
 								File oldestBack = firstFileModified(backups);
-								sender.sendMessage(prefix + ChatColor.RED + oldestBack.getName()
+								sender.sendMessage(prefix + ChatColor.RED + " " + oldestBack.getName()
 										+ ": The current save goes over the max savesize, and so the oldest file has been deleted. If you wish to save older backups, copy them to another location.");
 								oldestBack.delete();
 							} else {
@@ -451,7 +451,7 @@ public class Main extends JavaPlugin {
 						return;
 					}
 
-					sender.sendMessage(prefix + " Done! Backup took:" + timeDifS);
+					sender.sendMessage(prefix + " Done! Backup took: " + timeDifS);
 					File tempBackupCheck = new File(getMasterFolder(), "backups");
 					sender.sendMessage(prefix + " Compressed server with size of "
 							+ (humanReadableByteCount(folderSize(getMasterFolder())
